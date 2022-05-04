@@ -4,6 +4,8 @@
 #include <vector>
 #include <memory>
 
+// #include <mpi.h>
+
 #include "lodepng.h"
 
 #ifndef M_PI
@@ -81,7 +83,7 @@ void DFT(std::vector<std::complex<double>>& in, std::vector<std::complex<double>
 			size_t addr = horizontal ? k + i * w : i + k * w;
 			out[k + i * w] = sum;
 		}
-		std::cout << i << std::endl;
+		// std::cout << i << std::endl;
 	}
 }
 
@@ -92,6 +94,25 @@ void Filter(std::vector<std::complex<double>>& in, int radiusMin, int radiusMax,
 			in[x + y * w] = std::complex<double>(0.0, 0.0);
 }
 
+void printcheck(std::vector<unsigned char>& buffer, size_t n){
+	//todo
+	for (size_t i = 0; i < n; i++)
+	{
+		printf(" %d",buffer[i]);
+	}
+	printf("\n");
+}
+
+void imageNormalization(std::vector<unsigned char>& buffer, std::vector<unsigned char>& out, size_t n){
+	//todo
+	out.clear();
+	out.resize(buffer.size());
+	for (size_t i = 0; i < n; i++)
+	{
+		out[i]=buffer[i]*255/buffer[0];
+	}
+}
+
 int main()
 {
 	std::string inName("bmei.png");
@@ -100,6 +121,7 @@ int main()
 	std::string outName("bmeiOut.png");
 
 	unsigned w = 0, h = 0;
+	unsigned wtest = 3, htest = 3;
 	std::vector<unsigned char> image;
 	loadPNG(inName, w, h, image);
 
@@ -111,20 +133,28 @@ int main()
 	std::cout << "DFT finished" << std::endl;
 	ComplexToReal(f1, image);
 	savePNG(dftName, w, h, image);
+	
+	std::vector<unsigned char> image_norm;
+	imageNormalization(image,image_norm,w*h);
+	savePNG("test.png", w, h, image_norm);
+
+	printcheck(image_norm, 30);
 
 	// Frequency filtering
-	//int minFreq = 1;
-	// int maxFreq = 100;
-	//Filter(f1, minFreq, MaxFreq, w, h);
-	//std::cout << "Filtering finished" << std::endl;
-	//ComplexToReal(f1, image);
-	//savePNG(dftFName, w, h, image);
+	int minFreq = 0;
+	int maxFreq = 0;
+	Filter(f1, minFreq, maxFreq, w, h);
+	std::cout << "Filtering finished" << std::endl;
+	ComplexToReal(f1, image);
+	savePNG(dftFName, w, h, image);
 
 	DFT(f1, f2, w, h, true, true);
 	DFT(f2, f1, w, h, false, true);
 	std::cout << "IDFT finished" << std::endl;
 	ComplexToReal(f1, image);
 	savePNG(outName, w, h, image);
+
+	printcheck(image, 30);
 
 	return 0;
 }
